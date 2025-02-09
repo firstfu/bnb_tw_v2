@@ -1025,8 +1025,6 @@ export default function RoomListScreen() {
         <BannerCarousel banners={mockBanners} />
         <QuickFilter />
         <ThemeRecommendation />
-        <FacilitiesPreview />
-        <ReviewsSection />
 
         <View style={styles.listContainer}>
           {filteredRooms.map(room => (

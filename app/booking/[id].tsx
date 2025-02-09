@@ -4,30 +4,104 @@ import { useLocalSearchParams, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing, borderRadius, shadows } from "../../src/theme";
 
-// 模擬訂單詳情資料
-const mockBookingDetails = {
-  id: "1",
-  orderNumber: "BK20240310001",
-  roomName: "豪華海景套房",
-  roomImage: "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
-  checkIn: "2024-04-15",
-  checkOut: "2024-04-17",
+interface BookingDetails {
+  id: string;
+  orderNumber: string;
+  roomName: string;
+  roomImage: string;
+  checkIn: string;
+  checkOut: string;
   guests: {
-    adult: 2,
-    child: 0,
-  },
-  status: "upcoming",
-  totalPrice: 11600,
-  bookingDate: "2024-03-10",
-  paymentMethod: "信用卡",
-  cardInfo: "**** **** **** 1234",
+    adult: number;
+    child: number;
+  };
+  status: "upcoming" | "completed" | "cancelled";
+  totalPrice: number;
+  bookingDate: string;
+  paymentMethod: string;
+  cardInfo: string;
   contactInfo: {
-    name: "王小明",
-    phone: "0912-345-678",
-    email: "wang@example.com",
+    name: string;
+    phone: string;
+    email: string;
+  };
+  specialRequests?: string;
+  cancellationPolicy: string;
+}
+
+// 模擬訂單詳情資料
+const mockBookingDetails: Record<string, BookingDetails> = {
+  "1": {
+    id: "1",
+    orderNumber: "BK20240310001",
+    roomName: "豪華海景套房",
+    roomImage: "https://images.unsplash.com/photo-1566665797739-1674de7a421a",
+    checkIn: "2024-04-15",
+    checkOut: "2024-04-17",
+    guests: {
+      adult: 2,
+      child: 0,
+    },
+    status: "upcoming",
+    totalPrice: 11600,
+    bookingDate: "2024-03-10",
+    paymentMethod: "信用卡",
+    cardInfo: "**** **** **** 1234",
+    contactInfo: {
+      name: "王小明",
+      phone: "0912-345-678",
+      email: "wang@example.com",
+    },
+    specialRequests: "希望能安排高樓層房間，謝謝。",
+    cancellationPolicy: "入住前3天免費取消，之後將收取首晚房費作為取消費用。",
   },
-  specialRequests: "希望能安排高樓層房間，謝謝。",
-  cancellationPolicy: "入住前3天免費取消，之後將收取首晚房費作為取消費用。",
+  "2": {
+    id: "2",
+    orderNumber: "BK20240215003",
+    roomName: "溫馨家庭房",
+    roomImage: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461",
+    checkIn: "2024-03-01",
+    checkOut: "2024-03-03",
+    guests: {
+      adult: 2,
+      child: 2,
+    },
+    status: "completed",
+    totalPrice: 8400,
+    bookingDate: "2024-02-15",
+    paymentMethod: "信用卡",
+    cardInfo: "**** **** **** 5678",
+    contactInfo: {
+      name: "李大華",
+      phone: "0923-456-789",
+      email: "lee@example.com",
+    },
+    specialRequests: "需要兒童床和兒童用品",
+    cancellationPolicy: "入住前3天免費取消，之後將收取首晚房費作為取消費用。",
+  },
+  "3": {
+    id: "3",
+    orderNumber: "BK20240120002",
+    roomName: "精緻雙人房",
+    roomImage: "https://images.unsplash.com/photo-1590490359683-658d3d23f972",
+    checkIn: "2024-02-14",
+    checkOut: "2024-02-15",
+    guests: {
+      adult: 2,
+      child: 0,
+    },
+    status: "cancelled",
+    totalPrice: 3500,
+    bookingDate: "2024-01-20",
+    paymentMethod: "信用卡",
+    cardInfo: "**** **** **** 9012",
+    contactInfo: {
+      name: "張小芳",
+      phone: "0934-567-890",
+      email: "chang@example.com",
+    },
+    cancellationPolicy: "入住前3天免費取消，之後將收取首晚房費作為取消費用。",
+  },
 };
 
 const InfoItem = ({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) => (
@@ -42,7 +116,7 @@ const InfoItem = ({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap
 
 export default function BookingDetailsScreen() {
   const params = useLocalSearchParams();
-  const booking = mockBookingDetails; // 實際應用中應該根據 params.id 獲取對應訂單資料
+  const booking = mockBookingDetails[params.id as keyof typeof mockBookingDetails];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -52,6 +126,53 @@ export default function BookingDetailsScreen() {
       day: "numeric",
     });
   };
+
+  if (!booking) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen
+          options={{
+            title: "訂單詳情",
+            headerTitleStyle: styles.headerTitle,
+          }}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>找不到訂單資料</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return {
+          label: "即將入住",
+          color: colors.primary,
+          bgColor: `${colors.primary}20`,
+        };
+      case "completed":
+        return {
+          label: "已完成",
+          color: colors.success,
+          bgColor: `${colors.success}20`,
+        };
+      case "cancelled":
+        return {
+          label: "已取消",
+          color: colors.error,
+          bgColor: `${colors.error}20`,
+        };
+      default:
+        return {
+          label: "未知狀態",
+          color: colors.textLight,
+          bgColor: `${colors.textLight}20`,
+        };
+    }
+  };
+
+  const statusInfo = getStatusInfo(booking.status);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -64,8 +185,8 @@ export default function BookingDetailsScreen() {
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Text style={styles.orderNumber}>訂單編號：{booking.orderNumber}</Text>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>即將入住</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
           </View>
         </View>
 
@@ -138,14 +259,12 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   statusBadge: {
-    backgroundColor: `${colors.primary}20`,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: borderRadius.full,
   },
   statusText: {
     fontSize: typography.caption.fontSize,
-    color: colors.primary,
     fontWeight: "600",
   },
   roomInfo: {
@@ -212,5 +331,14 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     color: colors.text,
     lineHeight: 24,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: typography.h3.fontSize,
+    color: colors.error,
   },
 });

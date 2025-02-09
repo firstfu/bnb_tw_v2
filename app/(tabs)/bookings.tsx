@@ -113,7 +113,7 @@ const BookingCard = ({ booking }: { booking: Booking }) => {
 
   const handleViewDetails = () => {
     router.push({
-      pathname: "/(booking)/[id]",
+      pathname: "/booking/[id]",
       params: {
         id: booking.id,
         orderNumber: booking.orderNumber,
